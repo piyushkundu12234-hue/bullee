@@ -3,12 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhantomLink</title>
+  <title>PhantomLink • Private Chat</title>
   <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#00ffcc">
 </head>
 <body>
-  <h1>PhantomLink - Private Chat</h1>
-  <p>If you see this message, the app is working.</p>
+  <div class="container">
+    <header>
+      <h1>PhantomLink</h1>
+      <p>End-to-End Encrypted • Serverless</p>
+    </header>
+
+    <!-- Setup Screen -->
+    <div id="setup" class="screen">
+      <button onclick="createOffer()">1. Create New Chat</button>
+      <button onclick="joinChat()">2. Join Existing Chat</button>
+    </div>
+
+    <!-- Create Offer Screen -->
+    <div id="connection" class="screen hidden">
+      <h2>Share this Offer with your friend</h2>
+      <textarea id="offerSDP" readonly></textarea>
+      <button onclick="copyOffer()">Copy Offer</button>
+
+      <div id="step2" class="hidden">
+        <h2>Paste Answer from Friend</h2>
+        <textarea id="answerInput"></textarea>
+        <button onclick="acceptAnswer()">Connect</button>
+      </div>
+    </div>
+
+    <!-- Join Screen -->
+    <div id="joinScreen" class="screen hidden">
+      <h2>Paste Offer from Friend</h2>
+      <textarea id="remoteOffer" placeholder="Paste Offer here..."></textarea>
+      <button onclick="acceptOffer()">Generate Answer</button>
+
+      <div id="myAnswerArea" class="hidden">
+        <h2>Copy this Answer to Friend</h2>
+        <textarea id="myAnswer" readonly></textarea>
+        <button onclick="copyAnswer()">Copy Answer</button>
+      </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat" class="screen hidden">
+      <div id="messages"></div>
+      <div class="input-area">
+        <input type="text" id="msgInput" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+      <button onclick="disconnect()">End Chat</button>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
