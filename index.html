@@ -4,59 +4,113 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PhantomLink • Private Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <meta name="theme-color" content="#00ffcc">
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #eee;
+      margin: 0;
+      padding: 15px;
+      text-align: center;
+    }
+    h1 { color: #00ffcc; margin: 20px 0 5px; }
+    p { color: #aaa; }
+    button {
+      background: #00ffcc;
+      color: black;
+      border: none;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 400px;
+      cursor: pointer;
+    }
+    textarea, input {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+      margin: 10px 0;
+      background: #1a1a2e;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: white;
+    }
+    .hidden { display: none !important; }
+    .message { margin: 10px 0; padding: 10px; border-radius: 8px; text-align: left; }
+    .own { background: #00ffcc33; }
+    .them { background: #333; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>PhantomLink</h1>
-      <p>End-to-End Encrypted • Serverless</p>
-    </header>
+  <h1>PhantomLink</h1>
+  <p>End-to-End Encrypted • Serverless</p>
 
-    <!-- Setup Screen -->
-    <div id="setup" class="screen">
-      <button onclick="createOffer()">1. Create New Chat</button>
-      <button onclick="joinChat()">2. Join Existing Chat</button>
-    </div>
+  <!-- Screen 1: Setup -->
+  <div id="setup">
+    <button onclick="createOffer()">1. Create New Chat</button>
+    <button onclick="joinChat()">2. Join Existing Chat</button>
+  </div>
 
-    <!-- Create Offer Screen -->
-    <div id="connection" class="screen hidden">
-      <h2>Share this Offer with your friend</h2>
-      <textarea id="offerSDP" readonly></textarea>
-      <button onclick="copyOffer()">Copy Offer</button>
-
-      <div id="step2" class="hidden">
-        <h2>Paste Answer from Friend</h2>
-        <textarea id="answerInput"></textarea>
-        <button onclick="acceptAnswer()">Connect</button>
-      </div>
-    </div>
-
-    <!-- Join Screen -->
-    <div id="joinScreen" class="screen hidden">
-      <h2>Paste Offer from Friend</h2>
-      <textarea id="remoteOffer" placeholder="Paste Offer here..."></textarea>
-      <button onclick="acceptOffer()">Generate Answer</button>
-
-      <div id="myAnswerArea" class="hidden">
-        <h2>Copy this Answer to Friend</h2>
-        <textarea id="myAnswer" readonly></textarea>
-        <button onclick="copyAnswer()">Copy Answer</button>
-      </div>
-    </div>
-
-    <!-- Chat Screen -->
-    <div id="chat" class="screen hidden">
-      <div id="messages"></div>
-      <div class="input-area">
-        <input type="text" id="msgInput" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">Send</button>
-      </div>
-      <button onclick="disconnect()">End Chat</button>
+  <!-- Screen 2: Create Offer -->
+  <div id="connection" class="hidden">
+    <h2>Share this Offer</h2>
+    <textarea id="offerSDP" readonly rows="4"></textarea>
+    <button onclick="copyOffer()">Copy Offer</button>
+    
+    <div id="step2" class="hidden">
+      <h2>Paste Answer from Friend</h2>
+      <textarea id="answerInput" rows="4"></textarea>
+      <button onclick="acceptAnswer()">Connect</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
-</body>
-</html>
+  <!-- Screen 3: Join -->
+  <div id="joinScreen" class="hidden">
+    <h2>Paste Offer from Friend</h2>
+    <textarea id="remoteOffer" rows="4" placeholder="Paste Offer here..."></textarea>
+    <button onclick="acceptOffer()">Generate Answer</button>
+    
+    <div id="myAnswerArea" class="hidden">
+      <h2>Copy this Answer</h2>
+      <textarea id="myAnswer" readonly rows="4"></textarea>
+      <button onclick="copyAnswer()">Copy Answer</button>
+    </div>
+  </div>
+
+  <!-- Chat Screen -->
+  <div id="chat" class="hidden">
+    <div id="messages" style="height:50vh; overflow-y:auto; background:#1a1a2e; padding:10px; border-radius:10px; margin:15px 0; text-align:left;"></div>
+    <input type="text" id="msgInput" placeholder="Type message..." style="margin-bottom:8px;">
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="disconnect()" style="background:#ff4444;">End Chat</button>
+  </div>
+
+  <script>
+    let pc, dc;
+    const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    function showScreen(id) {
+      document.querySelectorAll('div[id]').forEach(div => div.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    async function createOffer() {
+      pc = new RTCPeerConnection(config);
+      dc = pc.createDataChannel("chat");
+      setupDC();
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      document.getElementById('offerSDP').value = btoa(JSON.stringify(pc.localDescription));
+      showScreen('connection');
+    }
+
+    function joinChat() {
+      showScreen('joinScreen');
+    }
+
+    async function acceptOffer() {
+      const offerStr = document.getElementById('remoteOffer').value.trim();
+      if (!offerStr) return alert("Paste Offer first");
+      
